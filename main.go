@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"github.com/ebfe/keccak"
 	"os"
-	"os/exec"
 	"strings"
-	"syscall"
 )
 
 var newEntry = "127.0.0.1 *.hostbuf.com"
@@ -91,7 +89,9 @@ func IsWindows() bool {
 func main() {
 	if !isAdmin() {
 		fmt.Println("请求管理员权限...")
-		runAsAdmin()
+		fmt.Println("清以管理员身份运行本程序！")
+		fmt.Println("\n按回车键退出...")
+		_, _ = fmt.Scanln()
 		return
 	}
 
@@ -146,21 +146,4 @@ func generateValues(code string) []string {
 func isAdmin() bool {
 	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
 	return err == nil
-}
-
-func runAsAdmin() {
-	exe, err := os.Executable()
-	if err != nil {
-		fmt.Printf("无法获取可执行文件路径: %v\n", err)
-		return
-	}
-	cmd := exec.Command("runas", "/user:Administrator", exe)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow: true,
-	}
-	err = cmd.Run()
-	if err != nil {
-		fmt.Printf("无法提升权限: %v\n", err)
-		return
-	}
 }
