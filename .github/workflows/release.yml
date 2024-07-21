@@ -31,5 +31,5 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           goversion: 1.22
-          binary_name: "gin-study"
+          binary_name: "findshell"
           extra_files: README.md
