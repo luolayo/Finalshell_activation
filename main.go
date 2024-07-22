@@ -10,36 +10,48 @@ import (
 	"strings"
 )
 
-var newEntry = "127.0.0.1 *.hostbuf.com"
+// newEntrys contains the list of entries to be added to the hosts file
+var newEntrys = []string{
+	"127.0.0.1 www.youtusoft.com",
+	"127.0.0.1 youtusoft.com",
+	"127.0.0.1 hostbuf.com",
+	"127.0.0.1 www.hostbuf.com",
+	"127.0.0.1 dkys.org",
+	"127.0.0.1 tcpspeed.com",
+	"127.0.0.1 www.wn1998.com",
+	"127.0.0.1 wn1998.com",
+	"127.0.0.1 pwlt.wn1998.com",
+	"127.0.0.1 backup.www.hostbuf.com",
+}
 
-// SetHosts Set hosts
+// SetHosts sets the hosts file entries
 func SetHosts() {
 	var hostsFilePath string
-	switch IsWindows() {
-	case true:
+	if IsWindows() {
 		hostsFilePath = "C:\\Windows\\System32\\drivers\\etc\\hosts"
-		// windows
 		fmt.Println("Windows")
-	case false:
+	} else {
+		hostsFilePath = "/etc/hosts"
 		fmt.Println("Linux")
-		hostsFilePath = "/etc/hosts"
-	// linux
-	default:
-		hostsFilePath = "/etc/hosts"
-		fmt.Println("get hosts file path error")
 	}
+
 	file, err := os.Open(hostsFilePath)
 	if err != nil {
 		fmt.Printf("无法打开hosts文件: %v\n", err)
 		return
 	}
-	scanner := bufio.NewScanner(file)
-	entryExists := false
-	for scanner.Scan() {
-		if strings.TrimSpace(scanner.Text()) == newEntry {
-			entryExists = true
-			break
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("关闭hosts文件时出错: %v\n", err)
 		}
+	}(file)
+
+	// Read existing entries
+	scanner := bufio.NewScanner(file)
+	existingEntries := make(map[string]bool)
+	for scanner.Scan() {
+		existingEntries[strings.TrimSpace(scanner.Text())] = true
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -47,12 +59,20 @@ func SetHosts() {
 		return
 	}
 
-	if entryExists {
-		fmt.Println("该条目已经存在于hosts文件中。")
+	// Filter new entries that are not already in the hosts file
+	var entriesToAdd []string
+	for _, entry := range newEntrys {
+		if !existingEntries[strings.TrimSpace(entry)] {
+			entriesToAdd = append(entriesToAdd, entry)
+		}
+	}
+
+	if len(entriesToAdd) == 0 {
+		fmt.Println("所有条目已经存在于hosts文件中。")
 		return
 	}
 
-	// 将新条目添加到hosts文件
+	// Open hosts file for appending new entries
 	file, err = os.OpenFile(hostsFilePath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("无法打开hosts文件以追加内容: %v\n", err)
@@ -61,24 +81,19 @@ func SetHosts() {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			fmt.Println("关闭hosts文件时出错。")
-			return
+			fmt.Printf("关闭hosts文件时出错: %v\n\n", err)
 		}
 	}(file)
 
-	if _, err = file.WriteString(newEntry + "\n"); err != nil {
-		fmt.Printf("写入hosts文件时出错: %v\n", err)
-		return
+	// Write new entries to hosts file
+	for _, entry := range entriesToAdd {
+		if _, err = file.WriteString(entry + "\n"); err != nil {
+			fmt.Printf("写入hosts文件时出错: %v\n", err)
+			return
+		}
 	}
 
 	fmt.Println("成功添加新条目到hosts文件。")
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			fmt.Println("关闭hosts文件时出错。")
-			return
-		}
-	}(file)
 }
 
 // IsWindows Determine whether the environment is Windows or Linux
@@ -103,10 +118,10 @@ func main() {
 	scanner.Scan()
 	code := scanner.Text()
 	values := generateValues(code)
-	fmt.Println("旧版本：")
+	fmt.Println("旧版本：> 3.9.6")
 	fmt.Println("高级版: " + values[0])
 	fmt.Println("专业版: " + values[1])
-	fmt.Println("新版本：")
+	fmt.Println("新版本：< 3.9.6")
 	fmt.Println("高级版: " + values[2])
 	fmt.Println("专业版: " + values[3])
 	// 等待用户输入以防止程序自动退出
