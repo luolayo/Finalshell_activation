@@ -29,10 +29,8 @@ func SetHosts() {
 	var hostsFilePath string
 	if IsWindows() {
 		hostsFilePath = "C:\\Windows\\System32\\drivers\\etc\\hosts"
-		fmt.Println("Windows")
 	} else {
 		hostsFilePath = "/etc/hosts"
-		fmt.Println("Linux")
 	}
 
 	file, err := os.Open(hostsFilePath)
@@ -102,30 +100,47 @@ func IsWindows() bool {
 }
 
 func main() {
-	if !isAdmin() {
-		fmt.Println("请求管理员权限...")
-		fmt.Println("清以管理员身份运行本程序！")
-		fmt.Println("\n按回车键退出...")
-		_, _ = fmt.Scanln()
-		return
-	}
+	//if !isAdmin() {
+	//	fmt.Println("请求管理员权限...")
+	//	fmt.Println("清以管理员身份运行本程序！")
+	//	fmt.Println("\n按回车键退出...")
+	//	_, _ = fmt.Scanln()
+	//	return
+	//}
 
 	fmt.Println("程序以管理员身份运行")
-
-	SetHosts()
 	fmt.Println("请输入机器码：")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	code := scanner.Text()
-	values := generateValues(code)
-	fmt.Println("旧版本：> 3.9.6")
+	fmt.Println("FinalShell > 3.9.6")
+	values := generateValues396Old(code)
 	fmt.Println("高级版: " + values[0])
 	fmt.Println("专业版: " + values[1])
-	fmt.Println("新版本：< 3.9.6")
-	fmt.Println("高级版: " + values[2])
-	fmt.Println("专业版: " + values[3])
+	fmt.Println("FinalShell ≥ 3.9.6")
+	values = generateValues396New(code)
+	fmt.Println("高级版: " + values[0])
+	fmt.Println("专业版: " + values[1])
+	fmt.Println("FinalShell 4.5")
+	values = generateValues45(code)
+	fmt.Println("高级版: " + values[0])
+	fmt.Println("专业版: " + values[1])
+	fmt.Println("FinalShell 4.6")
+	values = generateValues46(code)
+	fmt.Println("高级版: " + values[0])
+	fmt.Println("专业版: " + values[1])
+	// 设置hosts文件
+	fmt.Println("强烈建议设置hosts文件以保证不用每次打开都重新激活")
+	fmt.Println("请选择是否设置hosts文件？(y/n)")
+	var choice string
+	_, _ = fmt.Scanln(&choice)
+	if strings.ToLower(choice) == "y" {
+		SetHosts()
+	} else {
+		fmt.Println("未设置hosts文件。")
+	}
 	// 等待用户输入以防止程序自动退出
-	fmt.Println("\n按回车键退出...")
+	fmt.Println("按回车键退出...")
 	_, _ = fmt.Scanln()
 }
 
@@ -142,20 +157,34 @@ func keccak384Hash(msg string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-// generateValues generates the values for both old and new versions
-func generateValues(code string) []string {
+func generateValues396Old(code string) []string {
 	versionOld := []string{
 		md5Hash("61305" + code + "8552")[8:24],
 		md5Hash("2356" + code + "13593")[8:24],
 	}
+	return versionOld
+}
+
+func generateValues396New(code string) []string {
 	versionNew := []string{
 		keccak384Hash(code + "hSf(78cvVlS5E")[12:28],
 		keccak384Hash(code + "FF3Go(*Xvbb5s2")[12:28],
 	}
-	fmt.Println("versionOld: ", keccak384Hash(code+"hSf(78cvVlS5E"))
-	fmt.Println("versionNew: ", keccak384Hash(code+"FF3Go(*Xvbb5s2"))
-	return append(versionOld, versionNew...)
-
+	return versionNew
+}
+func generateValues45(code string) []string {
+	version45 := []string{
+		keccak384Hash(code + "wcegS3gzA$")[12:28],
+		keccak384Hash(code + "b(xxkHn%z);x")[12:28],
+	}
+	return version45
+}
+func generateValues46(code string) []string {
+	version46 := []string{
+		keccak384Hash(code + "csSf5*xlkgYSX,y")[12:28],
+		keccak384Hash(code + "Scfg*ZkvJZc,s,Y")[12:28],
+	}
+	return version46
 }
 
 func isAdmin() bool {
